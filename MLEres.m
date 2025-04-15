@@ -1,0 +1,19 @@
+function [thetahat exitflag] = MLEres(P,F,K,L,initial)
+Plag=getLags(P,K+L+1);
+Flag=getLags(F,K+L+1);
+T=length(Plag);
+P=P(end-T+1:end);
+
+x0=initial; % Set starting values for ML optimization
+x0(5)=0;
+Aineq=[];
+Bineq=[];
+Aeq=[0 0 0 0 1];
+Beq=[0];
+lb=[];
+ub=[];
+opts = optimoptions(@fmincon,'Algorithm','interior-point','MaxFunctionEvaluations',1000,'Display','off');
+ms = MultiStart('UseParallel',false,'Display','off','XTolerance',0.001,'FunctionTolerance',0.001);
+fixedFunction = @(x) LogLik(x,P,Plag,Flag,K,L);
+problem = createOptimProblem('fmincon','x0',x0,'objective',fixedFunction,'options',opts,'Aeq',Aeq,'beq',Beq);
+[thetahat fval exitflag] = run(ms,problem,1);
